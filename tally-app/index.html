@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BizBooks — Billing &amp; Ledger</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ============ TOASTS ============ -->
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- ============ CONFIRM DIALOG ============ -->
+<div id="confirmOverlay" class="modal-overlay hidden">
+  <div class="modal confirm-modal">
+    <h3 id="confirmTitle">Are you sure?</h3>
+    <p id="confirmMessage">This action cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="confirmCancelBtn">Cancel</button>
+      <button class="btn btn-danger" id="confirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ GST DETECTION POPUP ============ -->
+<div id="gstDetectionOverlay" class="modal-overlay hidden">
+  <div class="modal confirm-modal gst-detect-modal">
+    <h3>GST TYPE DETECTED</h3>
+    <div class="gst-detect-row"><span>Party:</span><strong id="gstDetectPartyName">-</strong></div>
+    <div class="gst-detect-row"><span>Party State:</span><strong id="gstDetectPartyState">-</strong></div>
+    <div class="gst-detect-row"><span>Company State:</span><strong id="gstDetectCompanyState">-</strong></div>
+    <div id="gstDetectType" class="gst-detect-type intra">INTRA-STATE GST</div>
+    <div id="gstDetectSubtype" class="gst-detect-subtype">CGST + SGST</div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="gstDetectionOkBtn">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div id="loginScreen" class="login-screen">
+  <form id="loginForm" class="login-card">
+    <div class="login-brand"><div class="brand-icon">BB</div><div><strong>BizBooks</strong><span>Billing &amp; Ledger</span></div></div>
+    <h2>Sign in</h2><p class="muted">Enter your account credentials to continue.</p>
+    <div class="form-field"><label>Username</label><input type="text" name="username" autocomplete="username" required autofocus></div>
+    <div class="form-field"><label>Password</label><input type="password" name="password" autocomplete="current-password" required></div>
+    <div id="loginError" class="login-error hidden">Invalid username or password.</div>
+    <button type="submit" class="btn btn-primary login-submit">Sign in</button>
+  </form>
+</div>
+<div id="companyScreen" class="login-screen hidden"><div class="company-card"><div class="modal-head"><div><h2>Choose Company</h2><p class="muted">Select the company you want to work with.</p></div><button class="btn btn-primary" id="newCompanyBtn">+ New Company</button></div><div id="companyList" class="company-list"></div><form id="companyForm" class="form-grid hidden"><input type="hidden" name="id"><div class="form-field"><label>Company Name *</label><input name="companyName" required></div><div class="form-field"><label>GSTIN</label><input name="companyGSTIN"></div><div class="form-field"><label>State</label><select name="state" id="companyStateSelect"></select></div><div class="form-field"><label>State Code</label><input name="stateCode" id="companyStateCode" readonly></div><div class="form-field span-2"><label>Address</label><textarea name="companyAddress" rows="2"></textarea></div><div class="form-field"><label>Mobile</label><input name="companyMobile"></div><div class="form-field"><label>Email</label><input type="email" name="companyEmail"></div><div class="form-field"><label>Financial Year</label><input name="financialYear" placeholder="2026-27"></div><div class="form-actions span-2"><button type="button" class="btn btn-ghost" id="cancelCompanyBtn">Cancel</button><button type="submit" class="btn btn-primary">Save Company</button></div></form></div></div>
+<div class="app-shell">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">BB</div>
+      <div class="brand-text">
+        <div class="brand-name" id="brandCompanyName">BizBooks</div>
+        <div class="brand-sub">Billing &amp; Ledger</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav">
+      <a href="#dashboard" class="nav-item" data-route="dashboard"><span class="nav-ic">&#9635;</span><span>Dashboard</span></a>
+      <a href="#parties" class="nav-item" data-route="parties"><span class="nav-ic">&#128100;</span><span>Party Master</span></a>
+      <a href="#invoices" class="nav-item" data-route="invoices"><span class="nav-ic">&#128196;</span><span>Sales Invoice</span></a>
+      <a href="#receipts" class="nav-item" data-route="receipts"><span class="nav-ic">&#128176;</span><span>Receipts</span></a>
+      <div class="nav-section-label">Purchase</div>
+      <a href="#purchases" class="nav-item" data-route="purchases"><span class="nav-ic">&#128722;</span><span>Purchase Entry</span></a>
+      <a href="#purchase-report" class="nav-item" data-route="purchase-report"><span class="nav-ic">&#128203;</span><span>Purchase Report</span></a>
+      <a href="#purchase-ledger" class="nav-item" data-route="purchase-ledger"><span class="nav-ic">&#128209;</span><span>Purchase Ledger</span></a>
+      <a href="#payments" class="nav-item" data-route="payments"><span class="nav-ic">&#128181;</span><span>Payments</span></a>
+      <div class="nav-section-label">Sales</div>
+      <a href="#credit-notes" class="nav-item" data-route="credit-notes"><span class="nav-ic">&#8617;</span><span>Credit Note</span></a>
+      <a href="#debit-notes" class="nav-item" data-route="debit-notes"><span class="nav-ic">&#8618;</span><span>Debit Note</span></a>
+      <a href="#ledger" class="nav-item" data-route="ledger"><span class="nav-ic">&#128213;</span><span>Party Ledger</span></a>
+      <a href="#outstanding" class="nav-item" data-route="outstanding"><span class="nav-ic">&#9201;</span><span>Outstanding</span></a>
+      <a href="#tds" class="nav-item" data-route="tds"><span class="nav-ic">&#128202;</span><span>TDS Report</span></a>
+      <a href="#gst" class="nav-item" data-route="gst"><span class="nav-ic">&#127974;</span><span>GST Report</span></a>
+      <a href="#backup" class="nav-item" data-route="backup"><span class="nav-ic">&#128190;</span><span>Backup/Restore</span></a>
+      <a href="#settings" class="nav-item" data-route="settings"><span class="nav-ic">&#9881;</span><span>Settings</span></a>
+    </nav>
+    <div class="sidebar-footer"><button class="sidebar-action" id="switchCompanyBtn">Switch Company</button><button class="sidebar-action" id="logoutBtn">Logout</button><div>v1.0 · Local Storage</div></div>
+  </aside>
+
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <!-- Main -->
+  <div class="main-area">
+    <header class="topbar">
+      <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Menu">&#9776;</button>
+      <h1 class="page-title" id="pageTitle">Dashboard</h1>
+      <div class="topbar-right">
+        <span class="active-company" id="activeCompanyName"></span>
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch color theme">☀ Normal</button>
+        <input type="text" id="globalSearch" class="global-search" placeholder="Quick search party / invoice...">
+      </div>
+    </header>
+
+    <main class="content" id="content">
+
+      <!-- ============ DASHBOARD ============ -->
+      <section class="view" id="view-dashboard">
+        <div class="toolbar">
+          <button class="btn btn-ghost" id="printDashboardBtn">Print Dashboard</button>
+        </div>
+        <div class="cards-grid" id="dashCards"></div>
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-head"><h3>Recent Invoices</h3><a href="#invoices" class="link-sm">View all</a></div>
+            <div class="table-wrap"><table class="data-table" id="dashRecentInvoices"><thead><tr><th>Inv No</th><th>Date</th><th>Party</th><th>Total</th></tr></thead><tbody></tbody></table></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Recent Receipts</h3><a href="#receipts" class="link-sm">View all</a></div>
+            <div class="table-wrap"><table class="data-table" id="dashRecentReceipts"><thead><tr><th>Rcpt No</th><th>Date</th><th>Party</th><th>Amount</th></tr></thead><tbody></tbody></table></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Top Outstanding Parties</h3><a href="#outstanding" class="link-sm">View all</a></div>
+          <div class="table-wrap"><table class="data-table" id="dashOutstanding"><thead><tr><th>Party</th><th>Balance</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+        </div>
+
+        <h3 style="margin-top:8px;">Purchase Overview</h3>
+        <div class="cards-grid" id="dashPurchaseCards"></div>
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-head"><h3>Recent Purchases</h3><a href="#purchases" class="link-sm">View all</a></div>
+            <div class="table-wrap"><table class="data-table" id="dashRecentPurchases"><thead><tr><th>Pur. Inv No</th><th>Date</th><th>Supplier</th><th>Total</th></tr></thead><tbody></tbody></table></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Top Payable Suppliers</h3><a href="#outstanding" class="link-sm">View all</a></div>
+            <div class="table-wrap"><table class="data-table" id="dashTopPayable"><thead><tr><th>Supplier</th><th>Balance</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PARTIES ============ -->
+      <section class="view" id="view-parties">
+        <div class="toolbar">
+          <input type="text" id="partySearch" class="search-input" placeholder="Search party by name, GSTIN, mobile...">
+          <button class="btn btn-ghost" id="printPartyListBtn">Print List</button>
+          <button class="btn btn-primary" id="addPartyBtn">+ New Party</button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="data-table" id="partyTable">
+              <thead><tr>
+                <th>Party Name</th><th>A/C To</th><th>GSTIN</th><th>Mobile</th><th>Opening Bal</th><th>Dr/Cr</th><th>Actions</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ INVOICES ============ -->
+      <section class="view" id="view-invoices">
+        <div class="toolbar">
+          <input type="text" id="invoiceSearch" class="search-input" placeholder="Search invoice no / party...">
+          <input type="date" id="invoiceDateFilter" class="date-input">
+          <button class="btn btn-ghost" id="printInvoiceListBtn">Print List</button>
+          <button class="btn btn-primary" id="addInvoiceBtn">+ New Invoice</button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="data-table" id="invoiceTable">
+              <thead><tr>
+                <th>Inv No</th><th>Invoice Date</th><th>Party</th><th>Service Month</th><th>Service Period</th><th>Taxable</th><th>GST%</th><th>GST Amt</th><th>Total</th><th>TDS</th><th>Net Recv.</th><th>Status</th><th>Actions</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ RECEIPTS ============ -->
+      <section class="view" id="view-receipts">
+        <div class="toolbar">
+          <input type="text" id="receiptSearch" class="search-input" placeholder="Search receipt no / party...">
+          <button class="btn btn-ghost" id="printReceiptListBtn">Print List</button>
+          <button class="btn btn-primary" id="addReceiptBtn">+ New Receipt</button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="data-table" id="receiptTable">
+              <thead><tr>
+                <th>Rcpt No</th><th>Date</th><th>Party</th><th>Amount</th><th>Mode</th><th>Bank/Cash</th><th>Reference</th><th>Actions</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PURCHASE ENTRY ============ -->
+      <section class="view" id="view-purchases">
+        <div class="toolbar">
+          <input type="text" id="purchaseSearch" class="search-input" placeholder="Search purchase invoice / supplier...">
+          <select id="purchasePartyFilter" class="search-input"><option value="">All Suppliers</option></select>
+          <input type="date" id="purchaseDateFilter" class="date-input">
+          <button class="btn btn-ghost" id="printPurchaseListBtn">Print List</button>
+          <button class="btn btn-primary" id="addPurchaseBtn">+ New Purchase</button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="data-table" id="purchaseTable">
+              <thead><tr>
+                <th>Pur. Inv No</th><th>Date</th><th>Supplier</th><th>Taxable</th><th>GST%</th><th>GST Amt</th><th>Total</th><th>TDS</th><th>Net Payable</th><th>Status</th><th>Actions</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PURCHASE REPORT ============ -->
+      <section class="view" id="view-purchase-report">
+        <div class="toolbar">
+          <input type="text" id="purchaseReportSearch" class="search-input" placeholder="Search purchase invoice / supplier...">
+          <select id="purchaseReportPartyFilter" class="search-input"><option value="">All Suppliers</option></select>
+          <input type="date" id="purchaseReportFrom" class="date-input" title="From">
+          <input type="date" id="purchaseReportTo" class="date-input" title="To">
+          <button class="btn btn-ghost" id="printPurchaseReportBtn">Print Report</button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="data-table" id="purchaseReportTable">
+              <thead><tr>
+                <th>Date</th><th>Purchase Invoice</th><th>Supplier</th><th>Taxable</th><th>GST</th><th>Total</th><th>TDS</th><th>Net Payable</th><th>Status</th><th>Actions</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+            <tfoot id="purchaseReportFoot"></tfoot>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PURCHASE LEDGER ============ -->
+      <section class="view" id="view-purchase-ledger">
+        <div class="toolbar">
+          <select id="purchaseLedgerPartySelect" class="search-input"><option value="">-- Select Supplier --</option></select>
+          <input type="date" id="purchaseLedgerFrom" class="date-input" title="From">
+          <input type="date" id="purchaseLedgerTo" class="date-input" title="To">
+          <button class="btn btn-ghost" id="purchaseLedgerPrintBtn">Print Ledger</button>
+        </div>
+        <div class="panel" id="purchaseLedgerSummaryPanel">
+          <div class="cards-grid" id="purchaseLedgerSummaryCards"></div>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="data-table" id="purchaseLedgerTable">
+              <thead><tr>
+                <th>Date</th><th>Particular</th><th>Reference</th><th>Debit</th><th>Credit</th><th>Balance</th><th>Dr/Cr</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PAYMENTS ============ -->
+      <section class="view" id="view-payments">
+        <div class="toolbar">
+          <input type="text" id="paymentSearch" class="search-input" placeholder="Search payment no / supplier...">
+          <button class="btn btn-ghost" id="printPaymentListBtn">Print List</button>
+          <button class="btn btn-primary" id="addPaymentBtn">+ New Payment</button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="data-table" id="paymentTable">
+              <thead><tr>
+                <th>Pymt No</th><th>Date</th><th>Supplier</th><th>Amount</th><th>Mode</th><th>Bank/Cash</th><th>Reference</th><th>Actions</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ LEDGER ============ -->
+      <section class="view" id="view-ledger">
+        <div class="toolbar">
+          <select id="ledgerPartySelect" class="search-input"><option value="">-- Select Party --</option></select>
+          <input type="date" id="ledgerFrom" class="date-input" title="From">
+          <input type="date" id="ledgerTo" class="date-input" title="To">
+          <button class="btn btn-ghost" id="ledgerPrintBtn">Print Ledger</button>
+        </div>
+        <div class="panel" id="ledgerSummaryPanel">
+          <div class="cards-grid" id="ledgerSummaryCards"></div>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="data-table" id="ledgerTable">
+              <thead><tr>
+                <th>Date</th><th>Particular</th><th>Reference</th><th>Debit</th><th>Credit</th><th>Balance</th><th>Dr/Cr</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ OUTSTANDING ============ -->
+      <section class="view" id="view-outstanding">
+        <h3 style="margin-top:0;">Customer Receivables (Sales)</h3>
+        <div class="toolbar">
+          <input type="text" id="outstandingSearch" class="search-input" placeholder="Search party...">
+          <select id="outstandingStatusFilter" class="search-input">
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Partially Received">Partially Received</option>
+            <option value="Cleared">Cleared</option>
+          </select>
+          <button class="btn btn-ghost" id="printOutstandingBtn">Print Report</button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="data-table" id="outstandingTable">
+              <thead><tr>
+                <th>Party</th><th>Invoice Amount</th><th>Received</th><th>TDS</th><th>Balance</th><th>Last Service Month</th><th>Last Service Period</th><th>Status</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <h3 style="margin-top:26px;">Supplier Payables (Purchases)</h3>
+        <div class="toolbar">
+          <input type="text" id="payableSearch" class="search-input" placeholder="Search supplier...">
+          <select id="payableStatusFilter" class="search-input">
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Partially Paid">Partially Paid</option>
+            <option value="Paid">Paid</option>
+          </select>
+          <button class="btn btn-ghost" id="printPayableBtn">Print Report</button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="data-table" id="payableTable">
+              <thead><tr>
+                <th>Supplier</th><th>Purchase Amount</th><th>Paid</th><th>TDS</th><th>Balance</th><th>Status</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ TDS REPORT ============ -->
+      <section class="view" id="view-credit-notes">
+        <div class="toolbar"><input type="text" id="creditNoteSearch" class="search-input" placeholder="Search note, invoice or party..."><button class="btn btn-ghost" id="printCreditNotesBtn">Print Report</button><button class="btn btn-primary" id="addCreditNoteBtn">+ New Credit Note</button></div>
+        <div class="panel"><div class="table-wrap"><table class="data-table" id="creditNoteTable"><thead><tr><th>Date</th><th>Credit Note</th><th>Reference Invoice</th><th>Party</th><th>Amount</th><th>GST</th><th>Adjustment</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div></div>
+      </section>
+      <section class="view" id="view-debit-notes">
+        <div class="toolbar"><input type="text" id="debitNoteSearch" class="search-input" placeholder="Search note, invoice or party..."><button class="btn btn-ghost" id="printDebitNotesBtn">Print Report</button><button class="btn btn-primary" id="addDebitNoteBtn">+ New Debit Note</button></div>
+        <div class="panel"><div class="table-wrap"><table class="data-table" id="debitNoteTable"><thead><tr><th>Date</th><th>Debit Note</th><th>Reference Invoice</th><th>Party</th><th>Amount</th><th>GST</th><th>Adjustment</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div></div>
+      </section>
+      <section class="view" id="view-tds">
+        <div class="toolbar">
+          <div class="toggle-row">
+            <button class="btn toggle-btn active" id="tdsModeSalesBtn" data-mode="sales">Sales TDS</button>
+            <button class="btn toggle-btn" id="tdsModePurchaseBtn" data-mode="purchase">Purchase TDS</button>
+          </div>
+          <input type="text" id="tdsSearch" class="search-input" placeholder="Search invoice / party...">
+          <input type="date" id="tdsFrom" class="date-input" title="From">
+          <input type="date" id="tdsTo" class="date-input" title="To">
+          <button class="btn btn-ghost" id="printTdsBtn">Print Report</button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="data-table" id="tdsTable">
+              <thead><tr>
+                <th>Date</th><th>Invoice No</th><th>Party</th><th>Invoice Total</th><th>TDS Rate</th><th>TDS Amount</th><th>Net</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+            <tfoot id="tdsFoot"></tfoot>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ GST REPORT ============ -->
+      <section class="view" id="view-gst">
+        <div class="toolbar">
+          <div class="toggle-row">
+            <button class="btn toggle-btn active" id="gstModeSalesBtn" data-mode="sales">Sales GST</button>
+            <button class="btn toggle-btn" id="gstModePurchaseBtn" data-mode="purchase">Purchase GST</button>
+          </div>
+          <input type="text" id="gstSearch" class="search-input" placeholder="Search invoice / party...">
+          <input type="date" id="gstFrom" class="date-input" title="From">
+          <input type="date" id="gstTo" class="date-input" title="To">
+          <button class="btn btn-ghost" id="printGstBtn">Print Report</button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="data-table" id="gstTable">
+              <thead><tr>
+                <th>Date</th><th>Invoice No</th><th>Party</th><th>Taxable</th><th>Type</th><th>CGST</th><th>SGST</th><th>IGST</th><th>Total GST</th><th>Total</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+            <tfoot id="gstFoot"></tfoot>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ BACKUP/RESTORE ============ -->
+      <section class="view" id="view-backup">
+        <div class="panel">
+          <h3>Backup Data</h3>
+          <p class="muted">Download a complete backup of parties, invoices, receipts and settings as a JSON file.</p>
+          <button class="btn btn-primary" id="backupBtn">Download Backup (.json)</button>
+        </div>
+        <div class="panel">
+          <h3>Restore Data</h3>
+          <p class="muted">Import a previously downloaded backup file. This will overwrite existing data after confirmation.</p>
+          <input type="file" id="restoreFile" accept="application/json">
+          <button class="btn btn-danger" id="restoreBtn">Restore from File</button>
+        </div>
+        <div class="panel">
+          <h3>Reset Application</h3>
+          <p class="muted">Erase all data and start fresh. This cannot be undone.</p>
+          <button class="btn btn-danger" id="resetAllBtn">Erase All Data</button>
+        </div>
+      </section>
+
+      <!-- ============ SETTINGS ============ -->
+      <section class="view" id="view-settings">
+        <div class="panel">
+          <h3>Company Details</h3>
+          <form id="settingsForm" class="form-grid">
+            <div class="form-field"><label>Company Name</label><input type="text" name="companyName"></div>
+            <div class="form-field"><label>GSTIN</label><input type="text" name="companyGSTIN"></div>
+            <div class="form-field"><label>State</label><select name="state" id="settingsStateSelect"></select></div>
+            <div class="form-field"><label>State Code</label><input type="text" name="stateCode" id="settingsStateCode" readonly></div>
+            <div class="form-field"><label>Mobile</label><input type="text" name="companyMobile"></div>
+            <div class="form-field"><label>Email</label><input type="email" name="companyEmail"></div>
+            <div class="form-field span-2"><label>Address</label><textarea name="companyAddress" rows="2"></textarea></div>
+            <div class="form-field"><label>Bank Name</label><input type="text" name="bankName"></div>
+            <div class="form-field"><label>Account No</label><input type="text" name="bankAccount"></div>
+            <div class="form-field"><label>IFSC Code</label><input type="text" name="ifsc"></div>
+            <div class="form-field"><label>Invoice Prefix</label><input type="text" name="invoicePrefix" placeholder="INV-"></div>
+            <div class="form-field"><label>Receipt Prefix</label><input type="text" name="receiptPrefix" placeholder="RCT-"></div>
+            <div class="form-field"><label>Purchase Prefix</label><input type="text" name="purchasePrefix" placeholder="PUR-"></div>
+            <div class="form-field"><label>Payment Prefix</label><input type="text" name="paymentPrefix" placeholder="PAY-"></div>
+            <div class="form-field span-2"><label>Terms &amp; Notes</label><textarea name="invoiceNotes" rows="2"></textarea></div>
+            <div class="form-actions span-2"><button type="submit" class="btn btn-primary">Save Settings</button></div>
+          </form>
+        </div>
+      </section>
+
+    </main>
+    <footer class="app-credit">Designed by Bhim Mondal</footer>
+  </div>
+</div>
+
+<!-- ============ DEBIT / CREDIT NOTE MODAL ============ -->
+<div class="modal-overlay hidden" id="noteModalOverlay"><div class="modal modal-lg"><div class="modal-head"><h3 id="noteModalTitle">New Note</h3><button class="icon-btn" id="noteModalClose">&times;</button></div>
+  <form id="noteForm" class="form-grid"><input type="hidden" name="id"><input type="hidden" name="noteType">
+    <div class="form-field"><label>Note No. *</label><input name="noteNo" required></div><div class="form-field"><label>Date *</label><input type="date" name="date" required></div>
+    <div class="form-field span-2"><label>Reference Invoice *</label><select name="referenceId" id="noteReferenceSelect" required><option value="">-- Select Sales / Purchase Invoice --</option></select></div>
+    <div class="form-field"><label>Party</label><input id="noteParty" readonly></div><div class="form-field"><label>Reason</label><input name="reason" required placeholder="e.g. Return / Rate difference"></div>
+    <div class="form-field span-2"><label>Description</label><textarea name="description" rows="2"></textarea></div>
+    <div class="form-field"><label>Taxable Amount *</label><input type="number" step="0.01" min="0" name="taxableAmount" id="noteTaxable" required value="0"></div><div class="form-field"><label>GST Rate</label><select name="gstRate" id="noteGstRate"><option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18">18%</option><option value="28">28%</option></select></div>
+    <div class="form-field"><label>GST Type</label><input id="noteTaxType" readonly></div><div class="form-field"><label>CGST / SGST or IGST</label><input id="noteGstBreakup" readonly></div>
+    <div class="form-field"><label>GST Amount</label><input id="noteGstAmount" readonly></div><div class="form-field"><label>Total Amount</label><input id="noteTotal" readonly></div>
+    <div class="form-field"><label>TDS Adjustment</label><input type="number" step="0.01" min="0" name="tdsAdjustment" id="noteTdsAdjustment" value="0"></div><div class="form-field"><label>Net Adjustment</label><input id="noteNetAdjustment" readonly></div>
+    <div class="form-field span-2" id="noteRemainingWrap"><label>Remaining Reversible Amount</label><input id="noteRemaining" readonly></div><div class="form-field span-2"><label>Narration</label><textarea name="narration" rows="2"></textarea></div>
+    <div class="form-actions span-2"><button type="button" class="btn btn-ghost" id="noteCancelBtn">Cancel</button><button type="submit" class="btn btn-primary">Save Note</button></div>
+  </form></div></div>
+
+<!-- ============ PARTY MODAL ============ -->
+<div class="modal-overlay hidden" id="partyModalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="partyModalTitle">New Party</h3>
+      <button class="icon-btn" id="partyModalClose">&times;</button>
+    </div>
+    <form id="partyForm" class="form-grid">
+      <input type="hidden" name="id">
+      <div class="form-field"><label>Party Name *</label><input type="text" name="partyName" required></div>
+      <div class="form-field"><label>A/C To</label><input type="text" name="acTo"></div>
+      <div class="form-field"><label>Bill To</label><input type="text" name="billTo"></div>
+      <div class="form-field"><label>Ship To</label><input type="text" name="shipTo"></div>
+      <div class="form-field"><label>GSTIN</label><input type="text" name="gstin"></div>
+      <div class="form-field"><label>State</label><select name="state" id="partyStateSelect"></select></div>
+      <div class="form-field"><label>State Code</label><input type="text" name="stateCode" id="partyStateCode" readonly></div>
+      <div class="form-field"><label>Mobile</label><input type="text" name="mobile"></div>
+      <div class="form-field"><label>Email</label><input type="email" name="email"></div>
+      <div class="form-field span-2"><label>Address</label><textarea name="address" rows="2"></textarea></div>
+      <div class="form-field"><label>Opening Balance</label><input type="number" step="0.01" name="openingBalance" value="0"></div>
+      <div class="form-field">
+        <label>Dr/Cr</label>
+        <select name="openingType"><option value="Dr">Dr (Receivable)</option><option value="Cr">Cr (Payable)</option></select>
+      </div>
+      <div class="form-actions span-2">
+        <button type="button" class="btn btn-ghost" id="partyCancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Party</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ INVOICE MODAL ============ -->
+<div class="modal-overlay hidden" id="invoiceModalOverlay">
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h3 id="invoiceModalTitle">New Invoice</h3>
+      <button class="icon-btn" id="invoiceModalClose">&times;</button>
+    </div>
+    <form id="invoiceForm" class="form-grid">
+      <input type="hidden" name="id">
+      <div class="form-field"><label>Invoice No *</label><input type="text" name="invoiceNo" required></div>
+      <div class="form-field"><label>Date *</label><input type="date" name="date" required></div>
+      <div class="form-field span-2"><label>Search Party *</label><input type="search" id="invoicePartySearch" list="invoicePartyOptions" placeholder="Type party name, GSTIN or mobile..."><datalist id="invoicePartyOptions"></datalist><select name="partyId" id="invoicePartySelect" required class="hidden"><option value="">-- Select Party --</option></select></div>
+      <div class="form-field"><label>GSTIN</label><input type="text" id="invPartyGstin" readonly></div>
+      <div class="form-field"><label>State / Code</label><input type="text" id="invPartyState" readonly></div>
+      <div class="form-field"><label>Mobile</label><input type="text" id="invPartyMobile" readonly></div>
+      <div class="form-field"><label>Email</label><input type="text" id="invPartyEmail" readonly></div>
+      <div class="form-field span-2"><label>Address</label><input type="text" id="invPartyAddress" readonly></div>
+      <div class="form-field"><label>A/C To</label><input type="text" name="acTo"></div>
+      <div class="form-field"><label>Bill To</label><input type="text" name="billTo"></div>
+      <div class="form-field span-2"><label>Ship To</label><input type="text" name="shipTo"></div>
+      <div class="form-field span-2"><label>Description</label><textarea name="description" rows="2"></textarea></div>
+      <div class="form-field"><label>Service Month</label><input type="month" name="serviceMonth" id="invServiceMonth"></div>
+      <div class="form-field"><label>Service From</label><input type="date" name="serviceFrom" id="invServiceFrom"></div>
+      <div class="form-field"><label>Service To</label><input type="date" name="serviceTo" id="invServiceTo"></div>
+      <div class="form-field"><label>Taxable Amount *</label><input type="number" step="0.01" name="taxableAmount" id="invTaxable" required value="0"></div>
+      <div class="form-field"><label>GST %</label>
+        <select name="gstRate" id="invGstRate">
+          <option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18">18%</option><option value="28">28%</option>
+        </select>
+      </div>
+      <div class="form-field span-2" style="background:var(--blue-50);padding:10px 14px;border-radius:8px;">
+        <label>Supply Type</label>
+        <input type="text" id="invTaxType" readonly style="font-weight:700;">
+      </div>
+      <div class="form-field" id="invCgstRateField"><label>CGST %</label><input type="text" id="invCgstRate" readonly></div>
+      <div class="form-field" id="invCgstAmtField"><label>CGST Amount</label><input type="text" id="invCgstAmount" readonly></div>
+      <div class="form-field" id="invSgstRateField"><label>SGST %</label><input type="text" id="invSgstRate" readonly></div>
+      <div class="form-field" id="invSgstAmtField"><label>SGST Amount</label><input type="text" id="invSgstAmount" readonly></div>
+      <div class="form-field" id="invIgstRateField" style="display:none"><label>IGST %</label><input type="text" id="invIgstRate" readonly></div>
+      <div class="form-field" id="invIgstAmtField" style="display:none"><label>IGST Amount</label><input type="text" id="invIgstAmount" readonly></div>
+      <div class="form-field"><label>GST Amount</label><input type="text" id="invGstAmount" readonly></div>
+      <div class="form-field"><label>Invoice Total</label><input type="text" id="invTotal" readonly></div>
+
+      <div class="form-field span-2 tds-toggle-row">
+        <label>TDS Applicable?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="tdsApplicable" value="No" checked> No</label>
+          <label><input type="radio" name="tdsApplicable" value="Yes"> Yes</label>
+        </div>
+      </div>
+      <div class="form-field" id="tdsRateField" style="display:none">
+        <label>TDS Rate</label>
+        <select name="tdsRate" id="invTdsRate"><option value="1">1%</option><option value="2">2%</option></select>
+      </div>
+      <div class="form-field" id="tdsAmtField" style="display:none"><label>TDS Amount</label><input type="text" id="invTdsAmount" readonly></div>
+      <div class="form-field span-2" id="netRecvField"><label>Net Receivable</label><input type="text" id="invNetReceivable" readonly></div>
+
+      <div class="form-actions span-2">
+        <button type="button" class="btn btn-ghost" id="invoiceCancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Invoice</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ RECEIPT MODAL ============ -->
+<div class="modal-overlay hidden" id="receiptModalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="receiptModalTitle">New Receipt</h3>
+      <button class="icon-btn" id="receiptModalClose">&times;</button>
+    </div>
+    <form id="receiptForm" class="form-grid">
+      <input type="hidden" name="id">
+      <div class="form-field"><label>Receipt No *</label><input type="text" name="receiptNo" required></div>
+      <div class="form-field"><label>Date *</label><input type="date" name="date" required></div>
+      <div class="form-field span-2"><label>Party *</label><select name="partyId" required><option value="">-- Select Party --</option></select></div>
+      <div class="form-field span-2"><label>Invoice No.</label><select name="invoiceId" id="receiptInvoiceSelect"><option value="">-- Select outstanding invoice --</option></select></div>
+      <div class="form-field"><label>Invoice Date</label><input id="receiptInvoiceDate" readonly></div>
+      <div class="form-field"><label>Service Month</label><input id="receiptServiceMonth" readonly></div>
+      <div class="form-field span-2"><label>Service Period</label><input id="receiptServicePeriod" readonly></div>
+      <div class="form-field"><label>Original Invoice Amount</label><input id="receiptOriginalAmount" readonly></div>
+      <div class="form-field"><label>TDS Amount</label><input id="receiptTdsAmount" readonly></div>
+      <div class="form-field"><label>Received Amount</label><input id="receiptReceivedAmount" readonly></div>
+      <div class="form-field"><label>Outstanding Amount</label><input id="receiptOutstandingAmount" readonly></div>
+      <div class="form-field"><label>Amount *</label><input type="number" step="0.01" name="amount" required></div>
+      <div class="form-field">
+        <label>Payment Mode</label>
+        <select name="paymentMode"><option>Cash</option><option>Bank Transfer</option><option>Cheque</option><option>UPI</option><option>Card</option><option>Other</option></select>
+      </div>
+      <div class="form-field"><label>Bank/Cash</label><input type="text" name="bankCash" placeholder="e.g. HDFC / Cash-in-hand"></div>
+      <div class="form-field"><label>Reference</label><input type="text" name="reference"></div>
+      <div class="form-field span-2"><label>Narration</label><textarea name="narration" rows="2"></textarea></div>
+      <div class="form-actions span-2">
+        <button type="button" class="btn btn-ghost" id="receiptCancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Receipt</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ PURCHASE MODAL ============ -->
+<div class="modal-overlay hidden" id="purchaseModalOverlay">
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h3 id="purchaseModalTitle">New Purchase</h3>
+      <button class="icon-btn" id="purchaseModalClose">&times;</button>
+    </div>
+    <form id="purchaseForm" class="form-grid">
+      <input type="hidden" name="id">
+      <div class="form-field"><label>Purchase Invoice No *</label><input type="text" name="purchaseInvoiceNo" required></div>
+      <div class="form-field"><label>Purchase Date *</label><input type="date" name="date" required></div>
+      <div class="form-field span-2"><label>Supplier / Party *</label><select name="partyId" id="purchasePartySelect" required><option value="">-- Select Supplier --</option></select></div>
+      <div class="form-field"><label>A/C To</label><input type="text" name="acTo"></div>
+      <div class="form-field"><label>Bill To</label><input type="text" name="billTo"></div>
+      <div class="form-field span-2"><label>Ship To</label><input type="text" name="shipTo"></div>
+      <div class="form-field span-2"><label>Description / Item</label><textarea name="description" rows="2"></textarea></div>
+      <div class="form-field"><label>Taxable Amount *</label><input type="number" step="0.01" name="taxableAmount" id="purTaxable" required value="0"></div>
+      <div class="form-field">
+        <label>GST %</label>
+        <select name="gstRate" id="purGstRate">
+          <option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18">18%</option><option value="28">28%</option>
+        </select>
+      </div>
+      <div class="form-field span-2" style="background:var(--blue-50);padding:10px 14px;border-radius:8px;">
+        <label>Supply Type</label>
+        <input type="text" id="purTaxType" readonly style="font-weight:700;">
+      </div>
+      <div class="form-field" id="purCgstRateField"><label>CGST %</label><input type="text" id="purCgstRate" readonly></div>
+      <div class="form-field" id="purCgstAmtField"><label>CGST Amount</label><input type="text" id="purCgstAmount" readonly></div>
+      <div class="form-field" id="purSgstRateField"><label>SGST %</label><input type="text" id="purSgstRate" readonly></div>
+      <div class="form-field" id="purSgstAmtField"><label>SGST Amount</label><input type="text" id="purSgstAmount" readonly></div>
+      <div class="form-field" id="purIgstRateField" style="display:none"><label>IGST %</label><input type="text" id="purIgstRate" readonly></div>
+      <div class="form-field" id="purIgstAmtField" style="display:none"><label>IGST Amount</label><input type="text" id="purIgstAmount" readonly></div>
+      <div class="form-field"><label>GST Amount</label><input type="text" id="purGstAmount" readonly></div>
+      <div class="form-field"><label>Invoice Total</label><input type="text" id="purTotal" readonly></div>
+
+      <div class="form-field span-2 tds-toggle-row">
+        <label>TDS Deduction?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="tdsApplicable" value="No" checked> No</label>
+          <label><input type="radio" name="tdsApplicable" value="Yes"> Yes</label>
+        </div>
+      </div>
+      <div class="form-field" id="purTdsRateField" style="display:none">
+        <label>TDS Rate</label>
+        <select name="tdsRate" id="purTdsRate"><option value="1">1%</option><option value="2">2%</option></select>
+      </div>
+      <div class="form-field" id="purTdsAmtField" style="display:none"><label>TDS Amount</label><input type="text" id="purTdsAmount" readonly></div>
+      <div class="form-field span-2" id="purNetPayableField"><label>Net Payable</label><input type="text" id="purNetPayable" readonly></div>
+
+      <div class="form-field">
+        <label>Payment Status</label>
+        <select name="paymentStatus"><option>Pending</option><option>Partially Paid</option><option>Paid</option></select>
+      </div>
+      <div class="form-field span-2"><label>Narration</label><textarea name="narration" rows="2"></textarea></div>
+
+      <div class="form-actions span-2">
+        <button type="button" class="btn btn-ghost" id="purchaseCancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Purchase</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ PAYMENT MODAL ============ -->
+<div class="modal-overlay hidden" id="paymentModalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="paymentModalTitle">New Payment</h3>
+      <button class="icon-btn" id="paymentModalClose">&times;</button>
+    </div>
+    <form id="paymentForm" class="form-grid">
+      <input type="hidden" name="id">
+      <div class="form-field"><label>Payment No *</label><input type="text" name="paymentNo" required></div>
+      <div class="form-field"><label>Date *</label><input type="date" name="date" required></div>
+      <div class="form-field span-2"><label>Supplier / Party *</label><select name="partyId" required><option value="">-- Select Supplier --</option></select></div>
+      <div class="form-field"><label>Amount *</label><input type="number" step="0.01" name="amount" required></div>
+      <div class="form-field">
+        <label>Payment Mode</label>
+        <select name="paymentMode"><option>Cash</option><option>Bank Transfer</option><option>Cheque</option><option>UPI</option><option>Card</option><option>Other</option></select>
+      </div>
+      <div class="form-field"><label>Bank/Cash</label><input type="text" name="bankCash" placeholder="e.g. HDFC / Cash-in-hand"></div>
+      <div class="form-field"><label>Reference</label><input type="text" name="reference"></div>
+      <div class="form-field span-2"><label>Narration</label><textarea name="narration" rows="2"></textarea></div>
+      <div class="form-actions span-2">
+        <button type="button" class="btn btn-ghost" id="paymentCancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Payment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ INVOICE PRINT MODAL ============ -->
+<div class="modal-overlay hidden" id="printModalOverlay">
+  <div class="modal modal-print">
+    <div class="modal-head no-print">
+      <h3>Invoice Preview</h3>
+      <div>
+        <button class="btn btn-primary" id="printNowBtn">Print / Save PDF</button>
+        <button class="icon-btn" id="printModalClose">&times;</button>
+      </div>
+    </div>
+    <div id="printArea" class="print-area"></div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
